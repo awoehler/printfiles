@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using System.IO;
 using System.Drawing.Printing;
 using System.Drawing;
+using System.Drawing.Imaging;
 
 namespace printfiles
 {
@@ -24,28 +25,53 @@ namespace printfiles
             pd.Print();
         }
 
+        static List<Image> GetAllPages(string file)
+        {
+            List<Image> images = new List<Image>();
+            Bitmap bitmap = (Bitmap)Image.FromFile(file);
+            int count = bitmap.GetFrameCount(FrameDimension.Page);
+            for (int idx = 0; idx < count; idx++)
+            {
+                // save each frame to a bytestream
+                bitmap.SelectActiveFrame(FrameDimension.Page, idx);
+                MemoryStream byteStream = new MemoryStream();
+                bitmap.Save(byteStream, ImageFormat.Tiff);
+
+                // and then create a new Image from it
+                images.Add(Image.FromStream(byteStream));
+            }
+            return images;
+        }
+
         static void PrintPage(object o, PrintPageEventArgs e)
         {
-            System.Drawing.Image img = System.Drawing.Image.FromFile("sample.TIF");
-            Rectangle m = e.PageBounds;
+            String[] allfiles = System.IO.Directory.GetFiles( Directory.GetCurrentDirectory(), "*.tif", System.IO.SearchOption.TopDirectoryOnly );
 
-            if ((double)img.Width / (double)img.Height > (double)m.Width / (double)m.Height) // image is wider
+            foreach (var file in allfiles)
             {
-                e.PageSettings.Landscape = true;
-                m.Height = (int)((double)img.Height / (double)img.Width * (double)m.Width) - 2;
-                e.PageBounds.Inflate(1098, 848 );
+                List<Image> pages = GetAllPages(file);
+                foreach( Image page in pages )
+                {
+                    Rectangle m = e.PageBounds;
 
+                    if ((double)page.Width / (double)page.Height > (double)m.Width / (double)m.Height) // image is wider
+                    {
+                        e.PageSettings.Landscape = true;
+                        m.Height = (int)((double)page.Height / (double)page.Width * (double)m.Width) - 2;
+                        e.PageBounds.Inflate(1098, 848);
+
+                    }
+                    else
+                    {
+                        e.PageSettings.Landscape = false;
+                        m.Width = (int)((double)page.Width / (double)page.Height * (double)m.Height) - 2;
+                        e.PageBounds.Inflate(848, 1098);
+                    }
+
+                    e.PageBounds.Offset(1, 1);
+                    e.Graphics.DrawImage(page, m);
+                }
             }
-            else
-            {
-                e.PageSettings.Landscape = false;
-                m.Width = (int)((double)img.Width / (double)img.Height * (double)m.Height) - 2;
-                e.PageBounds.Inflate(848, 1098);
-            }
-
-            e.PageBounds.Offset(1, 1);
-            e.Graphics.DrawImage(img, m);
-
         }
 
     }
