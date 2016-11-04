@@ -14,15 +14,6 @@ namespace printfiles
     {
         static void Main(string[] args)
         {
-            //Only works if printer accepts the given format.
-            //var file = File.ReadAllBytes(args[0]);
-            //var printQueue = LocalPrintServer.GetDefaultPrintQueue();
-
-            //using (var job = printQueue.AddJob())
-            //using (var stream = job.JobStream)
-            //{
-            //    stream.Write(file, 0, file.Length);
-            //}
             print();
          }
         static void print()
@@ -33,7 +24,7 @@ namespace printfiles
             pd.Print();
         }
 
-            static void PrintPage(object o, PrintPageEventArgs e)
+        static void PrintPage(object o, PrintPageEventArgs e)
         {
             System.Drawing.Image img = System.Drawing.Image.FromFile("sample.TIF");
             Rectangle m = e.PageBounds;
@@ -42,7 +33,6 @@ namespace printfiles
             {
                 e.PageSettings.Landscape = true;
                 m.Height = (int)((double)img.Height / (double)img.Width * (double)m.Width) - 2;
-                //e.PageSettings.i
                 e.PageBounds.Inflate(1098, 848 );
 
             }
